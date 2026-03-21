@@ -17,10 +17,10 @@ jobs:
       pull-requests: write
 
     steps:
-      - name: Checkout Trusted Baseline (Main)
+      - name: Checkout Trusted Baseline (Master)
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: master
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -76,7 +76,7 @@ jobs:
             const prNumber = context.payload.client_payload?.pr_number;
             if (prNumber) {
               github.rest.issues.createComment({
-                owner: 'metacall',
+                owner: context.repo.owner,
                 repo: 'protocol',
                 issue_number: parseInt(prNumber),
                 body: `${status} **Surgical Integration Test Result**\nRepo: deploy\nStatus: ${status}\n[View Run](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`
