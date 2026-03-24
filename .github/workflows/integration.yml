@@ -20,18 +20,26 @@ jobs:
           node-version: 20
 
       - name: Cleanup Linter Bait
-        run: rm -f scripts/*.ts # Remove .ts files to stop ESLint from crashing
+        run: rm -f scripts/*.ts
 
       - name: Install Base Dependencies
         run: npm install --ignore-scripts --no-package-lock
 
       - name: Surgical Protocol Injection
         run: |
-          # Install protocol directly from the PR branch
           OWNER="${{ github.event.client_payload.owner }}"
           BRANCH="${{ github.event.client_payload.protocol_branch }}"
           echo "[Surgical Engine] Injecting Protocol from $OWNER/$BRANCH"
+          
+          # 1. Install from GitHub
           npm install "github:$OWNER/protocol#$BRANCH" --ignore-scripts --no-package-lock
+          
+          # 2. BUILD the injected protocol (since GitHub only has /src)
+          echo "[Surgical Engine] Building injected protocol..."
+          cd node_modules/@metacall/protocol
+          npm install --ignore-scripts
+          npx tsc
+          echo "[Surgical Engine] Protocol build complete."
 
       - name: Start Auth Proxy (The Vault)
         env:
@@ -44,8 +52,7 @@ jobs:
         env:
           METACALL_API_URL: http://localhost:8080
         run: |
-          # Directly call mocha on the TS files using ts-node
-          # This BYPASSES the broken npm test / lint steps
+          # Use npx ts-node to run mocha directly on the TS files
           npx ts-node --transpile-only node_modules/mocha/bin/mocha src/test/cli.integration.spec.ts
 
       - name: Report Results
